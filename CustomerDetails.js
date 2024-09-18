@@ -1,57 +1,54 @@
 import React, { Component } from 'react';
-import { fetchCustomerDetails } from './api'; // Assuming there's an api.js file for API calls.
+import { getCustomerData } from './Customers';
+import { displayCustomerDetails as displayCustomerDetailsFromCustomers } from './Customers';
 
 class CustomerDetails extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      customerDetails: null,
-      error: null,
+    constructor(props) {
+        super(props);
+        this.state = {
+            customerDetails: null,
+            error: null,
+        };
+    }
+
+    componentDidMount() {
+        this.fetchCustomerDetails(this.props.customerId);
+    }
+
+    fetchCustomerDetails = async (customerId) => {
+        try {
+            const customerDetails = await getCustomerData(customerId);
+            this.setState({
+                customerDetails: {
+                    ...customerDetails,
+                    favouriteColour: customerDetails.favouriteColour || 'Not specified', // Ensure favouriteColour is set
+                },
+                error: null,
+            });
+        } catch (error) {
+            this.setState({ error: 'Failed to fetch customer details. Please try again later.' });
+        }
     };
-  }
 
-  componentDidMount() {
-    const { customerId } = this.props;
+    displayCustomerDetails() {
+        const { customerDetails } = this.state;
+        if (!customerDetails) {
+            return <p>Loading customer details...</p>;
+        }
 
-    fetchCustomerDetails(customerId)
-      .then(response => {
-        this.setState({ customerDetails: response });
-      })
-      .catch(error => {
-        this.setState({ error: error.message });
-        console.error('Error fetching customer details:', error);
-      });
-  }
+        return displayCustomerDetailsFromCustomers(customerDetails);
+    }
 
-  displayCustomerInfo(customer) {
-    return (
-      <div className="customer-info">
-        <h3>{customer.name}</h3>
-        <p>Email: {customer.email}</p>
-        <p>Favorite Color: {customer.favouriteColour}</p>
-        {/* Include other necessary customer details here */}
-      </div>
-    );
-  }
+    render() {
+        const { error } = this.state;
 
-  displayError() {
-    return (
-      <div className="error">
-        <p>Error: {this.state.error}</p>
-      </div>
-    );
-  }
-
-  render() {
-    const { customerDetails, error } = this.state;
-
-    return (
-      <div className="customer-details">
-        {error && this.displayError()}
-        {customerDetails && this.displayCustomerInfo(customerDetails)}
-      </div>
-    );
-  }
+        return (
+            <div>
+                {error && <p className="error">{error}</p>}
+                {this.displayCustomerDetails()}
+            </div>
+        );
+    }
 }
 
 export default CustomerDetails;
